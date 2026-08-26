@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { TalentMapInput, JDSourceInfo, ConfidenceLevel, SeniorityLevel, WorkModel, UrgencyLevel } from '../types';
 import { parseJDHeuristically } from '../services/talentIntelligenceEngine';
+import { extractTextFromFile } from '../services/documentParser';
 import { ConfidenceBadge } from './ConfidenceBadge';
 import {
   Upload,
@@ -18,6 +19,7 @@ import {
   ChevronRight,
   RotateCcw,
   Loader2,
+  FileType,
 } from 'lucide-react';
 
 interface IntakeViewProps {
@@ -31,6 +33,9 @@ export const IntakeView: React.FC<IntakeViewProps> = ({ onGenerateReport, isGene
   const [rawText, setRawText] = useState<string>('');
   const [fileName, setFileName] = useState<string | null>(null);
   const [isParsing, setIsParsing] = useState<boolean>(false);
+  const [isExtractingFile, setIsExtractingFile] = useState<boolean>(false);
+  const [isDragging, setIsDragging] = useState<boolean>(false);
+  const [fileExtractStatus, setFileExtractStatus] = useState<string | null>(null);
 
   // Extracted data state for Step 2
   const [formData, setFormData] = useState<TalentMapInput>({
@@ -61,19 +66,57 @@ export const IntakeView: React.FC<IntakeViewProps> = ({ onGenerateReport, isGene
   const [targetCompInput, setTargetCompInput] = useState('');
   const [excludedCompInput, setExcludedCompInput] = useState('');
 
-  // Handle File Upload
+  // Process File Object through documentParser
+  const processUploadedFile = async (file: File) => {
+    setFileName(file.name);
+    setIsExtractingFile(true);
+    setFileExtractStatus('Extracting document text...');
+
+    try {
+      const extracted = await extractTextFromFile(file);
+      if (extracted && extracted.trim().length > 0) {
+        setRawText(extracted);
+        const ext = file.name.split('.').pop()?.toUpperCase() || 'DOCUMENT';
+        setFileExtractStatus(`${ext} parsed successfully (${extracted.length.toLocaleString()} characters)`);
+      } else {
+        setFileExtractStatus('Could not extract text. Please paste text directly.');
+      }
+    } catch (err) {
+      console.error('Error extracting text from file:', err);
+      setFileExtractStatus('Failed to read file contents. Please paste text directly.');
+    } finally {
+      setIsExtractingFile(false);
+    }
+  };
+
+  // Handle File Input Change
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    processUploadedFile(file);
+  };
 
-    setFileName(file.name);
+  // Drag & Drop handlers
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const content = event.target?.result as string;
-      setRawText(content || '');
-    };
-    reader.readAsText(file);
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      processUploadedFile(file);
+    }
   };
 
   // Step 1 -> Step 2 Parser Execution
@@ -184,9 +227,22 @@ export const IntakeView: React.FC<IntakeViewProps> = ({ onGenerateReport, isGene
       {currentStep === 1 && (
         <div className="space-y-6">
           {/* Primary Drop Zone */}
-          <div className="glass-card rounded-2xl p-8 border-2 border-dashed border-slate-700/80 hover:border-indigo-500/70 text-center space-y-4 transition-all">
+          <div
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            className={`glass-card rounded-2xl p-8 border-2 border-dashed text-center space-y-4 transition-all ${
+              isDragging
+                ? 'border-cyan-400 bg-cyan-500/10 scale-[1.01]'
+                : 'border-slate-700/80 hover:border-cyan-500/50'
+            }`}
+          >
             <div className="w-16 h-16 mx-auto rounded-2xl accent-gradient glow flex items-center justify-center text-white">
-              <Upload className="w-7 h-7" />
+              {isExtractingFile ? (
+                <Loader2 className="w-7 h-7 animate-spin" />
+              ) : (
+                <Upload className="w-7 h-7" />
+              )}
             </div>
 
             <div>
@@ -194,7 +250,7 @@ export const IntakeView: React.FC<IntakeViewProps> = ({ onGenerateReport, isGene
                 Upload a Technical Job Description
               </h3>
               <p className="text-xs text-slate-400 mt-1 max-w-md mx-auto leading-relaxed">
-                Upload a PDF, DOCX, or text file — or paste raw requirements below. The Intelligence Engine will parse taxonomy and grade confidence.
+                Upload or drop a Word document (<span className="text-cyan-300 font-mono">.docx</span>, <span className="text-cyan-300 font-mono">.doc</span>), <span className="text-cyan-300 font-mono">PDF</span>, or text file. The system will extract clean readable text automatically.
               </p>
             </div>
 
@@ -203,31 +259,44 @@ export const IntakeView: React.FC<IntakeViewProps> = ({ onGenerateReport, isGene
                 htmlFor="jd-file-input"
                 className="px-5 py-2.5 accent-gradient accent-gradient-hover text-white rounded-full text-xs font-bold cursor-pointer transition-all glow hover:shadow-[0_0_25px_rgba(6,182,212,0.4)]"
               >
-                Browse Files
+                {isExtractingFile ? 'Parsing Document...' : 'Browse Files'}
                 <input
                   id="jd-file-input"
                   type="file"
-                  accept=".txt,.pdf,.doc,.docx"
+                  accept=".txt,.pdf,.doc,.docx,.rtf,.md"
                   onChange={handleFileUpload}
+                  disabled={isExtractingFile}
                   className="hidden"
                 />
               </label>
 
               {fileName && (
-                <span className="text-xs text-indigo-300 bg-indigo-500/15 border border-indigo-500/30 px-3 py-1.5 rounded-xl flex items-center gap-2 font-mono">
-                  <FileText className="w-3.5 h-3.5 text-indigo-400" />
+                <span className="text-xs text-cyan-300 bg-cyan-500/15 border border-cyan-500/30 px-3.5 py-1.5 rounded-xl flex items-center gap-2 font-mono">
+                  <FileText className="w-3.5 h-3.5 text-cyan-400" />
                   {fileName}
                 </span>
               )}
             </div>
+
+            {/* Extraction status notification */}
+            {fileExtractStatus && (
+              <div className="inline-flex items-center gap-2 px-3 py-1 bg-slate-900/90 border border-slate-700/80 rounded-lg text-xs font-mono text-cyan-300">
+                {isExtractingFile ? (
+                  <Loader2 className="w-3 h-3 animate-spin text-cyan-400" />
+                ) : (
+                  <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                )}
+                <span>{fileExtractStatus}</span>
+              </div>
+            )}
           </div>
 
           {/* Paste Raw JD Text Area */}
           <div className="space-y-2">
             <label className="text-xs font-semibold text-slate-300 flex items-center justify-between">
-              <span>Or Paste Job Description Text:</span>
+              <span>Job Description Text (Parsed Content):</span>
               <span className="text-[11px] font-mono text-slate-400">
-                {rawText.length} characters
+                {rawText.length.toLocaleString()} characters
               </span>
             </label>
 
@@ -238,8 +307,8 @@ export const IntakeView: React.FC<IntakeViewProps> = ({ onGenerateReport, isGene
               onChange={(e) => {
                 setRawText(e.target.value);
               }}
-              placeholder="Paste complete job description, hiring requirements, or role specification..."
-              className="w-full p-4 text-xs font-mono bg-slate-950/70 border border-slate-800 rounded-xl focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 focus:outline-hidden text-slate-100 placeholder-slate-600 leading-relaxed shadow-inner"
+              placeholder="Paste complete job description, hiring requirements, or upload a Word document / PDF above..."
+              className="w-full p-4 text-xs font-mono bg-slate-950/70 border border-slate-800 rounded-xl focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 focus:outline-hidden text-slate-100 placeholder-slate-600 leading-relaxed shadow-inner"
             />
           </div>
 
