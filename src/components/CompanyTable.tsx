@@ -20,11 +20,12 @@ export const CompanyTable: React.FC<CompanyTableProps> = ({ landscape, targetLis
     setIsDossierOpen(true);
   };
 
-  const filteredLandscape = landscape.filter(item => {
+  const filteredLandscape = (landscape || []).filter(item => {
     const matchesTier = selectedTier === 'ALL' || item.tier === selectedTier;
-    const matchesQuery = item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.relevantSkills.some(s => s.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      item.relevantTitles.some(t => t.toLowerCase().includes(searchQuery.toLowerCase()));
+    const matchesQuery = !searchQuery ||
+      item.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.relevantSkills?.some(s => s.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      item.relevantTitles?.some(t => t.toLowerCase().includes(searchQuery.toLowerCase()));
     return matchesTier && matchesQuery;
   });
 
