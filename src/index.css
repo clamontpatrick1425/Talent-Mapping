@@ -1,0 +1,299 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    background-color: #0F172A;
+    color: #F8FAFC;
+    overflow-x: hidden;
+    transition: background-color 0.25s ease, color 0.25s ease;
+  }
+
+  body.light,
+  html.light,
+  .light {
+    background-color: #F8FAFC;
+    color: #0F172A;
+  }
+}
+
+/* ==========================================================================
+   THEME UTILITIES & BACKGROUNDS
+   ========================================================================== */
+.gradient-bg {
+  background: radial-gradient(circle at top right, #1E293B 0%, #0F172A 70%);
+  transition: background 0.3s ease;
+}
+
+.light .gradient-bg,
+.light.gradient-bg,
+body.light .gradient-bg {
+  background: radial-gradient(circle at top right, #E2E8F0 0%, #F1F5F9 45%, #F8FAFC 100%);
+}
+
+.accent-gradient {
+  background: linear-gradient(135deg, #6366F1 0%, #06B6D4 100%);
+}
+
+.accent-gradient-hover:hover {
+  background: linear-gradient(135deg, #4F46E5 0%, #0891B2 100%);
+}
+
+.accent-text-gradient {
+  background: linear-gradient(135deg, #818CF8 0%, #38BDF8 50%, #2DD4BF 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.light .accent-text-gradient {
+  background: linear-gradient(135deg, #4338CA 0%, #0284C7 50%, #0D9488 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ==========================================================================
+   CARD & CONTAINER STYLING (DARK VS LIGHT)
+   ========================================================================== */
+.glass-card {
+  background: rgba(30, 41, 59, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: background-color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.light .glass-card,
+body.light .glass-card {
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(203, 213, 225, 0.8);
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05);
+}
+
+.glass-card-interactive {
+  background: rgba(30, 41, 59, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(8px);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.light .glass-card-interactive,
+body.light .glass-card-interactive {
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(203, 213, 225, 0.75);
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
+}
+
+.glass-card-interactive:hover {
+  background: rgba(30, 41, 59, 0.85);
+  border-color: rgba(99, 102, 241, 0.4);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35), 0 0 20px rgba(99, 102, 241, 0.2);
+  transform: translateY(-1px);
+}
+
+.light .glass-card-interactive:hover,
+body.light .glass-card-interactive:hover {
+  background: #ffffff;
+  border-color: rgba(99, 102, 241, 0.5);
+  box-shadow: 0 8px 24px rgba(99, 102, 241, 0.12), 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+/* ==========================================================================
+   GLOW EFFECTS
+   ========================================================================== */
+.glow {
+  box-shadow: 0 0 20px rgba(99, 102, 241, 0.35);
+}
+
+.glow-cyan {
+  box-shadow: 0 0 20px rgba(6, 182, 212, 0.35);
+}
+
+.glow-emerald {
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.35);
+}
+
+.glow-subtle {
+  box-shadow: 0 0 12px rgba(99, 102, 241, 0.15);
+}
+
+.glow-dot {
+  box-shadow: 0 0 8px #818CF8;
+}
+
+.glow-dot-cyan {
+  box-shadow: 0 0 8px #22D3EE;
+}
+
+.glow-dot-emerald {
+  box-shadow: 0 0 8px #34D399;
+}
+
+/* Light mode adjustments for glows */
+.light .glow {
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.25);
+}
+
+.light .glow-cyan {
+  box-shadow: 0 4px 16px rgba(6, 182, 212, 0.25);
+}
+
+.light .glow-emerald {
+  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.25);
+}
+
+/* ==========================================================================
+   LIGHT THEME ELEMENT & CONTRAST OVERRIDES
+   ========================================================================== */
+.light header {
+  background-color: rgba(255, 255, 255, 0.92) !important;
+  border-color: rgba(226, 232, 240, 0.9) !important;
+}
+
+.light nav {
+  background-color: rgba(241, 245, 249, 0.85) !important;
+  border-color: rgba(203, 213, 225, 0.8) !important;
+}
+
+.light footer {
+  background-color: rgba(248, 250, 252, 0.95) !important;
+  border-color: rgba(226, 232, 240, 0.9) !important;
+  color: #475569 !important;
+}
+
+/* Containers and Surfaces in Light Mode */
+.light .bg-slate-950,
+.light .bg-slate-950\/90,
+.light .bg-slate-950\/80,
+.light .bg-slate-950\/70,
+.light .bg-slate-950\/60 {
+  background-color: #f1f5f9 !important;
+}
+
+.light .bg-slate-900,
+.light .bg-slate-900\/90,
+.light .bg-slate-900\/80,
+.light .bg-slate-900\/70 {
+  background-color: #ffffff !important;
+}
+
+.light .bg-slate-800,
+.light .bg-slate-800\/90,
+.light .bg-slate-800\/80,
+.light .bg-slate-800\/60 {
+  background-color: #f8fafc !important;
+}
+
+.light .border-slate-800,
+.light .border-slate-800\/90,
+.light .border-slate-800\/80,
+.light .border-slate-700,
+.light .border-slate-700\/80 {
+  border-color: #cbd5e1 !important;
+}
+
+/* Light Mode Text Legibility */
+.light .text-white {
+  color: #0f172a !important;
+}
+
+.light .text-slate-100 {
+  color: #0f172a !important;
+}
+
+.light .text-slate-200 {
+  color: #1e293b !important;
+}
+
+.light .text-slate-300 {
+  color: #334155 !important;
+}
+
+.light .text-slate-400 {
+  color: #475569 !important;
+}
+
+.light .text-slate-500 {
+  color: #64748b !important;
+}
+
+/* Preserve White text on Gradient/Solid Buttons in Light Mode */
+.light .accent-gradient,
+.light .accent-gradient *,
+.light button.accent-gradient,
+.light .bg-indigo-600,
+.light .bg-indigo-600 *,
+.light .bg-cyan-600,
+.light .bg-cyan-600 * {
+  color: #ffffff !important;
+}
+
+/* Accessible Brand Accent Colors in Light Mode */
+.light .text-cyan-300,
+.light .text-cyan-400 {
+  color: #0284c7 !important;
+}
+
+.light .text-indigo-300,
+.light .text-indigo-400 {
+  color: #4f46e5 !important;
+}
+
+.light .text-emerald-300,
+.light .text-emerald-400 {
+  color: #059669 !important;
+}
+
+.light .text-amber-300,
+.light .text-amber-400 {
+  color: #b45309 !important;
+}
+
+.light .text-rose-300,
+.light .text-rose-400 {
+  color: #e11d48 !important;
+}
+
+/* Form Inputs in Light Mode */
+.light input,
+.light select,
+.light textarea {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+
+.light input::placeholder,
+.light textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+/* ==========================================================================
+   CUSTOM SCROLLBARS
+   ========================================================================== */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.6);
+}
+.light ::-webkit-scrollbar-track {
+  background: rgba(241, 245, 249, 0.8);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.4);
+  border-radius: 4px;
+}
+.light ::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.5);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.6);
+}
+.light ::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.7);
+}
+

@@ -1,0 +1,6 @@
+{
+  "name": "Talent Intelligence & Market Mapping System",
+  "description": "Senior Technical Talent Intelligence & Market Mapping System: Transforms job requirements and job descriptions into data-driven 23-part talent maps, sourcing strategies, Boolean strings, and executive recruiting briefs.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
