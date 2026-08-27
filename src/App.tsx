@@ -422,7 +422,10 @@ export default function App() {
         )}
 
         {activeTab === 'dashboard' && report && (
-          <TalentDashboardView report={report} />
+          <TalentDashboardView
+            report={report}
+            onNavigateToIntake={() => setActiveTab('intake')}
+          />
         )}
 
         {activeTab === 'insights' && report && (

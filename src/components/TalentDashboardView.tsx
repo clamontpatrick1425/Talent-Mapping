@@ -22,9 +22,10 @@ import {
 interface TalentDashboardViewProps {
   report: TalentMapReport;
   onUpdateWorkModel?: (model: WorkModel) => void;
+  onNavigateToIntake?: () => void;
 }
 
-export const TalentDashboardView: React.FC<TalentDashboardViewProps> = ({ report }) => {
+export const TalentDashboardView: React.FC<TalentDashboardViewProps> = ({ report, onNavigateToIntake }) => {
   // Interactive sensitivity simulator state
   const [simWorkModel, setSimWorkModel] = useState<WorkModel>(report.input.workModel.value);
   const [simRadiusDelta, setSimRadiusDelta] = useState<number>(0);
@@ -124,13 +125,25 @@ export const TalentDashboardView: React.FC<TalentDashboardViewProps> = ({ report
           {fiveLayers.map((layer) => (
             <div
               key={layer.num}
-              className="glass-card-interactive rounded-xl p-4 space-y-2"
+              onClick={() => {
+                if (layer.num === 1 && onNavigateToIntake) {
+                  onNavigateToIntake();
+                }
+              }}
+              className={`glass-card-interactive rounded-xl p-4 space-y-2 transition-all ${
+                layer.num === 1 && onNavigateToIntake ? 'cursor-pointer hover:border-cyan-500/50 hover:bg-cyan-950/20' : ''
+              }`}
             >
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-mono font-bold text-slate-400">LAYER 0{layer.num}</span>
                 {layer.icon}
               </div>
-              <div className="font-bold text-xs text-white">{layer.name}</div>
+              <div className="font-bold text-xs text-white flex items-center justify-between">
+                <span>{layer.name}</span>
+                {layer.num === 1 && onNavigateToIntake && (
+                  <span className="text-[10px] font-mono text-cyan-400 font-semibold underline">Upload JD →</span>
+                )}
+              </div>
               <p className="text-[11px] text-slate-400 leading-snug">{layer.desc}</p>
             </div>
           ))}

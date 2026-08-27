@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { TalentMapInput, JDSourceInfo, ConfidenceLevel, SeniorityLevel, WorkModel, UrgencyLevel } from '../types';
+import React, { useState, useEffect, useRef } from 'react';
+import { TalentMapInput, JDSourceInfo, SeniorityLevel, WorkModel } from '../types';
 import { parseJDHeuristically } from '../services/talentIntelligenceEngine';
 import { extractTextFromFile } from '../services/documentParser';
 import { saveIntakeDraftToStorage, loadIntakeDraftFromStorage } from '../services/storageService';
@@ -10,17 +10,15 @@ import {
   Sparkles,
   ArrowRight,
   CheckCircle2,
-  AlertTriangle,
-  HelpCircle,
   Briefcase,
   MapPin,
-  DollarSign,
-  Clock,
-  Layers,
-  ChevronRight,
   RotateCcw,
   Loader2,
   FileType,
+  X,
+  FileCheck,
+  FileSpreadsheet,
+  FileCode,
 } from 'lucide-react';
 
 interface IntakeViewProps {
@@ -36,10 +34,13 @@ export const IntakeView: React.FC<IntakeViewProps> = ({ onGenerateReport, isGene
   const [currentStep, setCurrentStep] = useState<1 | 2>(savedDraft?.currentStep || 1);
   const [rawText, setRawText] = useState<string>(savedDraft?.rawText || '');
   const [fileName, setFileName] = useState<string | null>(savedDraft?.fileName || null);
+  const [fileSize, setFileSize] = useState<string | null>(null);
   const [isParsing, setIsParsing] = useState<boolean>(false);
   const [isExtractingFile, setIsExtractingFile] = useState<boolean>(false);
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [fileExtractStatus, setFileExtractStatus] = useState<string | null>(savedDraft?.fileExtractStatus || null);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Extracted data state for Step 2
   const [formData, setFormData] = useState<TalentMapInput>(savedDraft?.formData || {
@@ -81,27 +82,27 @@ export const IntakeView: React.FC<IntakeViewProps> = ({ onGenerateReport, isGene
   const [reqSkillInput, setReqSkillInput] = useState('');
   const [prefSkillInput, setPrefSkillInput] = useState('');
   const [techInput, setTechInput] = useState('');
-  const [targetCompInput, setTargetCompInput] = useState('');
-  const [excludedCompInput, setExcludedCompInput] = useState('');
 
   // Process File Object through documentParser
   const processUploadedFile = async (file: File) => {
     setFileName(file.name);
+    const sizeKb = Math.round(file.size / 1024);
+    setFileSize(sizeKb > 1024 ? `${(sizeKb / 1024).toFixed(1)} MB` : `${sizeKb} KB`);
     setIsExtractingFile(true);
-    setFileExtractStatus('Extracting document text...');
+    setFileExtractStatus(`Extracting text from ${file.name}...`);
 
     try {
       const extracted = await extractTextFromFile(file);
       if (extracted && extracted.trim().length > 0) {
         setRawText(extracted);
         const ext = file.name.split('.').pop()?.toUpperCase() || 'DOCUMENT';
-        setFileExtractStatus(`${ext} parsed successfully (${extracted.length.toLocaleString()} characters)`);
+        setFileExtractStatus(`${ext} parsed successfully (${extracted.length.toLocaleString()} characters extracted)`);
       } else {
-        setFileExtractStatus('Could not extract text. Please paste text directly.');
+        setFileExtractStatus('Could not automatically parse text. Please paste text directly into the box below.');
       }
     } catch (err) {
       console.error('Error extracting text from file:', err);
-      setFileExtractStatus('Failed to read file contents. Please paste text directly.');
+      setFileExtractStatus('Failed to read file contents. Please paste text directly into the box below.');
     } finally {
       setIsExtractingFile(false);
     }
@@ -134,6 +135,17 @@ export const IntakeView: React.FC<IntakeViewProps> = ({ onGenerateReport, isGene
     const file = e.dataTransfer.files?.[0];
     if (file) {
       processUploadedFile(file);
+    }
+  };
+
+  // Clear current upload
+  const handleClearFile = () => {
+    setFileName(null);
+    setFileSize(null);
+    setRawText('');
+    setFileExtractStatus(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
   };
 
@@ -170,6 +182,7 @@ export const IntakeView: React.FC<IntakeViewProps> = ({ onGenerateReport, isGene
   // Manual Mode Jump
   const handleManualEntry = () => {
     setFileName(null);
+    setFileSize(null);
     setRawText('');
     setFormData({
       role: { value: '', confidence: 'unknown' },
@@ -194,7 +207,7 @@ export const IntakeView: React.FC<IntakeViewProps> = ({ onGenerateReport, isGene
     setCurrentStep(2);
   };
 
-  // Helper to mark field as Verified upon user edit (Section 1 spec rule)
+  // Helper to mark field as Verified upon user edit
   const updateField = (updater: (prev: TalentMapInput) => TalentMapInput) => {
     setFormData((prev) => updater(prev));
   };
@@ -214,30 +227,37 @@ export const IntakeView: React.FC<IntakeViewProps> = ({ onGenerateReport, isGene
             Intake Engine · Section 01
           </div>
           <h1 className="text-2xl font-bold text-white mt-1">
-            {currentStep === 1 ? 'Job Description Intake & Ingestion' : 'Extracted Talent Requirement Review'}
+            {currentStep === 1 ? 'Job Description Intake & Document Upload' : 'Extracted Talent Requirement Review'}
           </h1>
         </div>
 
         <div className="flex items-center gap-3">
-          <div
-            className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold font-mono transition-all ${
+          <button
+            onClick={() => setCurrentStep(1)}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold font-mono transition-all cursor-pointer ${
               currentStep === 1
                 ? 'accent-gradient text-white glow'
-                : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 glow-dot-emerald'
+                : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 glow-dot-emerald hover:bg-emerald-500/30'
             }`}
           >
-            01
-          </div>
-          <div className="w-8 h-0.5 bg-slate-800" />
-          <div
-            className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold font-mono transition-all ${
+            <span className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-[10px]">01</span>
+            <span>Upload & Paste</span>
+          </button>
+          <div className="w-6 h-0.5 bg-slate-800" />
+          <button
+            onClick={() => {
+              if (rawText.trim()) handleParseJD();
+            }}
+            disabled={!rawText.trim()}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold font-mono transition-all ${
               currentStep === 2
                 ? 'accent-gradient text-white glow'
-                : 'bg-slate-800 text-slate-500 border border-slate-700'
+                : 'bg-slate-900 text-slate-500 border border-slate-800 disabled:opacity-50'
             }`}
           >
-            02
-          </div>
+            <span className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center text-[10px]">02</span>
+            <span>Taxonomy Review</span>
+          </button>
         </div>
       </div>
 
@@ -249,39 +269,55 @@ export const IntakeView: React.FC<IntakeViewProps> = ({ onGenerateReport, isGene
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
-            className={`glass-card rounded-2xl p-8 border-2 border-dashed text-center space-y-4 transition-all ${
+            className={`glass-card rounded-2xl p-8 border-2 border-dashed text-center space-y-4 transition-all relative overflow-hidden ${
               isDragging
-                ? 'border-cyan-400 bg-cyan-500/10 scale-[1.01]'
-                : 'border-slate-700/80 hover:border-cyan-500/50'
+                ? 'border-cyan-400 bg-cyan-500/10 scale-[1.01] shadow-[0_0_30px_rgba(6,182,212,0.2)]'
+                : 'border-slate-700/80 hover:border-cyan-500/50 bg-slate-950/40'
             }`}
           >
-            <div className="w-16 h-16 mx-auto rounded-2xl accent-gradient glow flex items-center justify-center text-white">
+            <div className="w-16 h-16 mx-auto rounded-2xl accent-gradient glow flex items-center justify-center text-white shadow-lg">
               {isExtractingFile ? (
-                <Loader2 className="w-7 h-7 animate-spin" />
+                <Loader2 className="w-8 h-8 animate-spin" />
               ) : (
-                <Upload className="w-7 h-7" />
+                <Upload className="w-8 h-8" />
               )}
             </div>
 
             <div>
-              <h3 className="text-base font-bold text-white">
-                Upload a Technical Job Description
+              <h3 className="text-lg font-bold text-white">
+                Upload Technical Job Description
               </h3>
-              <p className="text-xs text-slate-400 mt-1 max-w-md mx-auto leading-relaxed">
-                Upload or drop a Word document (<span className="text-cyan-300 font-mono">.docx</span>, <span className="text-cyan-300 font-mono">.doc</span>), <span className="text-cyan-300 font-mono">PDF</span>, or text file. The system will extract clean readable text automatically.
+              <p className="text-xs text-slate-300 mt-1.5 max-w-lg mx-auto leading-relaxed">
+                Drag and drop your hiring specification document or browse from your computer. Supports{' '}
+                <span className="text-cyan-300 font-mono font-semibold">PDF</span>,{' '}
+                <span className="text-cyan-300 font-mono font-semibold">Word (.docx, .doc)</span>,{' '}
+                <span className="text-cyan-300 font-mono font-semibold">RTF</span>, and{' '}
+                <span className="text-cyan-300 font-mono font-semibold">Plain Text (.txt, .md)</span>.
               </p>
             </div>
 
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            {/* Action Buttons in Drop Zone */}
+            <div className="flex flex-wrap items-center justify-center gap-3 pt-1">
               <label
                 htmlFor="jd-file-input"
-                className="px-5 py-2.5 accent-gradient accent-gradient-hover text-white rounded-full text-xs font-bold cursor-pointer transition-all glow hover:shadow-[0_0_25px_rgba(6,182,212,0.4)]"
+                className="px-6 py-3 accent-gradient accent-gradient-hover text-white rounded-full text-xs font-bold cursor-pointer transition-all glow hover:shadow-[0_0_25px_rgba(6,182,212,0.4)] flex items-center gap-2"
               >
-                {isExtractingFile ? 'Parsing Document...' : 'Browse Files'}
+                {isExtractingFile ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin text-white" />
+                    <span>Parsing Document...</span>
+                  </>
+                ) : (
+                  <>
+                    <FileText className="w-4 h-4" />
+                    <span>Browse & Upload File</span>
+                  </>
+                )}
                 <input
                   id="jd-file-input"
+                  ref={fileInputRef}
                   type="file"
-                  accept=".txt,.pdf,.doc,.docx,.rtf,.md"
+                  accept=".txt,.pdf,.doc,.docx,.rtf,.md,.markdown"
                   onChange={handleFileUpload}
                   disabled={isExtractingFile}
                   className="hidden"
@@ -289,61 +325,74 @@ export const IntakeView: React.FC<IntakeViewProps> = ({ onGenerateReport, isGene
               </label>
 
               {fileName && (
-                <span className="text-xs text-cyan-300 bg-cyan-500/15 border border-cyan-500/30 px-3.5 py-1.5 rounded-xl flex items-center gap-2 font-mono">
-                  <FileText className="w-3.5 h-3.5 text-cyan-400" />
-                  {fileName}
-                </span>
+                <div className="flex items-center gap-2 bg-slate-900 border border-cyan-500/40 px-3.5 py-2 rounded-xl text-xs text-cyan-300 font-mono">
+                  <FileCheck className="w-4 h-4 text-cyan-400 shrink-0" />
+                  <span className="truncate max-w-[200px]">{fileName}</span>
+                  {fileSize && <span className="text-slate-500 text-[10px]">({fileSize})</span>}
+                  <button
+                    type="button"
+                    onClick={handleClearFile}
+                    title="Remove file"
+                    className="p-1 hover:text-rose-400 text-slate-400 transition-colors ml-1 cursor-pointer"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               )}
             </div>
 
-            {/* Extraction status notification */}
+            {/* Extraction status banner */}
             {fileExtractStatus && (
-              <div className="inline-flex items-center gap-2 px-3 py-1 bg-slate-900/90 border border-slate-700/80 rounded-lg text-xs font-mono text-cyan-300">
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-slate-900/90 border border-cyan-500/30 rounded-xl text-xs font-mono text-cyan-300">
                 {isExtractingFile ? (
-                  <Loader2 className="w-3 h-3 animate-spin text-cyan-400" />
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-cyan-400" />
                 ) : (
-                  <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
                 )}
                 <span>{fileExtractStatus}</span>
               </div>
             )}
           </div>
 
-          {/* Paste Raw JD Text Area */}
+          {/* Paste / Edit Raw JD Text Area */}
           <div className="space-y-2">
-            <label className="text-xs font-semibold text-slate-300 flex items-center justify-between">
-              <span>Job Description Text (Parsed Content):</span>
-              <span className="text-[11px] font-mono text-slate-400">
-                {rawText.length.toLocaleString()} characters
-              </span>
-            </label>
+            <div className="flex items-center justify-between">
+              <label htmlFor="raw-jd-textarea" className="text-xs font-semibold text-slate-300 flex items-center gap-2">
+                <FileCode className="w-3.5 h-3.5 text-cyan-400" />
+                <span>Job Description Content (Parsed Text):</span>
+              </label>
+              <div className="flex items-center gap-3 text-[11px] font-mono text-slate-400">
+                <span>{rawText.length.toLocaleString()} characters</span>
+                <span>•</span>
+                <span>{rawText.trim() ? rawText.trim().split(/\s+/).length.toLocaleString() : 0} words</span>
+              </div>
+            </div>
 
             <textarea
               id="raw-jd-textarea"
               rows={8}
               value={rawText}
-              onChange={(e) => {
-                setRawText(e.target.value);
-              }}
+              onChange={(e) => setRawText(e.target.value)}
               placeholder="Paste complete job description, hiring requirements, or upload a Word document / PDF above..."
-              className="w-full p-4 text-xs font-mono bg-slate-950/70 border border-slate-800 rounded-xl focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 focus:outline-hidden text-slate-100 placeholder-slate-600 leading-relaxed shadow-inner"
+              className="w-full p-4 text-xs font-mono bg-slate-950/80 border border-slate-800 rounded-xl focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 focus:outline-hidden text-slate-100 placeholder-slate-600 leading-relaxed shadow-inner"
             />
           </div>
 
           {/* Action Footer */}
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
             <button
+              type="button"
               onClick={handleManualEntry}
               className="text-xs font-medium text-slate-400 hover:text-indigo-300 underline cursor-pointer transition-colors"
             >
-              Or fill this out manually (skip extraction pass)
+              Or fill out taxonomy fields manually (skip upload & extraction)
             </button>
 
             <button
               id="btn-extract-jd"
               onClick={handleParseJD}
-              disabled={!rawText.trim() || isParsing}
-              className="flex items-center gap-2.5 px-6 py-3 accent-gradient accent-gradient-hover disabled:opacity-50 text-white rounded-full text-xs font-bold transition-all glow cursor-pointer hover:shadow-[0_0_25px_rgba(6,182,212,0.45)]"
+              disabled={!rawText.trim() || isParsing || isExtractingFile}
+              className="flex items-center gap-2.5 px-7 py-3 accent-gradient accent-gradient-hover disabled:opacity-50 text-white rounded-full text-xs font-bold transition-all glow cursor-pointer hover:shadow-[0_0_25px_rgba(6,182,212,0.45)]"
             >
               {isParsing ? (
                 <>
@@ -768,7 +817,7 @@ export const IntakeView: React.FC<IntakeViewProps> = ({ onGenerateReport, isGene
                 className="flex items-center gap-2 text-xs text-slate-400 hover:text-white cursor-pointer font-semibold transition-colors"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
-                <span>Re-upload / Re-extract JD</span>
+                <span>← Re-upload / Upload Different JD</span>
               </button>
 
               <button
