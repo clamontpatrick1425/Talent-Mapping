@@ -35,7 +35,7 @@ export const CompanyDossierModal: React.FC<CompanyDossierModalProps> = ({
   if (!isOpen || !company) return null;
 
   const isLandscape = 'poachingAngle' in company;
-  const companyName = company.name || (company as any).company || 'Target Company';
+  const companyName = ('name' in company ? company.name : (company as any).company) || 'Target Company';
   const roleName = report.input.role.value;
   const primarySkills = report.input.skills.required.value.slice(0, 4);
 

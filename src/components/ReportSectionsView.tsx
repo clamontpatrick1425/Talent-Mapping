@@ -85,12 +85,12 @@ export const ReportSectionsView: React.FC<ReportSectionsViewProps> = ({ report }
     report.targetTitles?.length ? report.targetTitles.map(t => t.title) : [`Lead ${report.input.role?.value || 'Engineer'}`, `Principal ${report.input.role?.value || 'Engineer'}`, 'Systems Architect']
   );
 
-  const technicalSkills = report.skillsAnalysis?.technicalSkills || (report.skillsAnalysis?.coreSkills || []).map((cs: any) => ({
+  const technicalSkills = ((report.skillsAnalysis as any)?.technicalSkills || (report.skillsAnalysis?.coreSkills || []).map((cs: any) => ({
     name: cs.name,
     importance: 'Critical Baseline',
     weight: 'High',
     scarcityRating: 'High Scarcity'
-  }));
+  }))) as Array<{ name: string; importance: string; weight: string; scarcityRating: string }>;
 
   const scarceSkills = (report.skillsAnalysis?.scarceSkills || []).map((sc: any) => ({
     name: sc.name,
@@ -335,7 +335,7 @@ export const ReportSectionsView: React.FC<ReportSectionsViewProps> = ({ report }
                   Geographic Talent Density & Relocation Feasibility
                 </h3>
               </div>
-              <ConfidenceBadge level={geo.confidence || 'verified'} source={(geo as any).dataSource || 'Aggregated Labor Density'} />
+              <ConfidenceBadge level={(geo as any).confidence || 'verified'} source={(geo as any).dataSource || 'Aggregated Labor Density'} />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -399,7 +399,7 @@ export const ReportSectionsView: React.FC<ReportSectionsViewProps> = ({ report }
                   Talent Supply Funnel & Availability Scoring
                 </h3>
               </div>
-              <ConfidenceBadge level={report.talentAvailabilityScore.confidence} />
+              <ConfidenceBadge level={(report.talentAvailabilityScore as any).confidence || 'verified'} />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -672,7 +672,7 @@ export const ReportSectionsView: React.FC<ReportSectionsViewProps> = ({ report }
                   Recruiting Difficulty Score & Pipeline Velocity
                 </h3>
               </div>
-              <ConfidenceBadge level={report.recruitingDifficultyScore.confidence} />
+              <ConfidenceBadge level={(report.recruitingDifficultyScore as any).confidence || 'verified'} />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

@@ -29,14 +29,19 @@ export const CandidateOutreachStudio: React.FC<CandidateOutreachStudioProps> = (
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   // Dynamic variables
-  const currentArchetype = archetypes[selectedArchetypeIdx] || {
+  const currentArchetype: CandidateArchetype = archetypes[selectedArchetypeIdx] || {
+    id: 'arch-default',
+    number: 1,
     name: 'Senior Distributed Systems Architect',
-    archetypeTitle: 'Staff Infrastructure Lead',
-    experienceProfile: '7-10 years in scalable cloud systems',
-    coreDifferentiators: ['High throughput Go/Rust', 'Kafka/Kubernetes', 'P99 latency tuning'],
-    motivationDrivers: ['Direct architecture ownership', 'Modern greenfield stack'],
-    objectionHandling: ['Wants zero bureaucratic committee review before shipping'],
-    pitchHook: 'Lead the next-generation event-driven platform with full architectural autonomy.',
+    archetypeType: 'Staff Infrastructure Lead',
+    backgroundSummary: '7-10 years in scalable cloud systems',
+    targetCompanies: ['Tier 1 Tech'],
+    targetTitles: ['Staff Engineer', 'Lead Architect'],
+    keySkills: ['High throughput Go/Rust', 'Kafka/Kubernetes', 'P99 latency tuning'],
+    likelyMotivations: ['Direct architecture ownership', 'Modern greenfield stack'],
+    recruitingChallenges: ['Wants zero bureaucratic committee review before shipping'],
+    recommendedMessagingHook: 'Lead the next-generation event-driven platform with full architectural autonomy.',
+    sampleOutreachSnippet: 'I came across your work on distributed systems...',
   };
 
   const roleTitle = report.input.role.value;
@@ -71,17 +76,20 @@ export const CandidateOutreachStudio: React.FC<CandidateOutreachStudioProps> = (
 
   // Generate customized message body
   const generateOutreachBody = () => {
+    const diffSkill = currentArchetype.keySkills?.[0] ? ` (specifically around ${currentArchetype.keySkills[0]})` : '';
+    const pitch = currentArchetype.recommendedMessagingHook || `We’re looking for a ${roleTitle} to spearhead this effort.`;
+
     if (senderTone === 'tech_lead') {
       if (pitchAngle === 'architecture') {
         return `Hi {Candidate Name},
 
-I came across your work on distributed systems and high-throughput architectures${currentArchetype.coreDifferentiators?.[0] ? ` (specifically around ${currentArchetype.coreDifferentiators[0]})` : ''}.
+I came across your work on distributed systems and high-throughput architectures${diffSkill}.
 
 I’m the Engineering Lead for our core platform team. We are currently architecting our next-generation infrastructure from the ground up to support our next 10x scale in ${metro} (${workModel}).
 
 Unlike larger legacy environments at places like ${targetCompany}, our team operates with zero architectural committee bureaucracy—engineers own the end-to-end RFC lifecycle, service boundaries, and production topology.
 
-${currentArchetype.pitchHook || `We’re looking for a ${roleTitle} to spearhead this effort.`}
+${pitch}
 
 Are you open to a casual 15-minute engineering-to-engineering conversation this Thursday or Friday to benchmark technical challenges?
 
@@ -136,7 +144,7 @@ I’m partnering directly with our VP of Engineering to hire a ${roleTitle} in $
 
 Key highlights of the role:
 • Total Compensation: Highly competitive market rates with equity upside.
-• Technical Scope: ${currentArchetype.pitchHook || 'Leading greenfield system design and high-scale services.'}
+• Technical Scope: ${pitch}
 • Work Culture: High autonomy, collaborative peers, and fast decision-making.
 
 Would you be open to a confidential 15-minute chat to learn more about the team and trajectory?
@@ -205,10 +213,10 @@ Technical Talent Partner`;
                 >
                   <div>
                     <div className="font-bold text-slate-200">
-                      {arch.archetypeTitle || arch.name}
+                      {arch.archetypeType || arch.name}
                     </div>
                     <div className="text-[11px] text-slate-400 truncate max-w-[240px]">
-                      {arch.experienceProfile}
+                      {arch.backgroundSummary}
                     </div>
                   </div>
                   <ChevronRight className={`w-4 h-4 shrink-0 ${selectedArchetypeIdx === idx ? 'text-cyan-400' : 'text-slate-600'}`} />

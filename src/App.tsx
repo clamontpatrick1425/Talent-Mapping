@@ -488,7 +488,7 @@ export default function App() {
             </div>
 
             {sourcingSubTab === 'search' && (
-              <SourcingSearchStation data={report.candidateSearchStrategy} />
+              <SourcingSearchStation data={report.sourcingStrings} />
             )}
             {sourcingSubTab === 'tracker' && (
               <CandidateTracker

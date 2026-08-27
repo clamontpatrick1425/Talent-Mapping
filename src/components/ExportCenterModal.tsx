@@ -53,7 +53,7 @@ export const ExportCenterModal: React.FC<ExportCenterModalProps> = ({
 ${report.executiveSummary.executiveBriefNarrative}
 
 ### Key Market Observations:
-${report.executiveSummary.keyFindings.map((f) => `- **${f.headline}**: ${f.detail}`).join('\n')}
+${(report.executiveRecruitingBrief?.keyTakeaways || []).map((f) => `- ${f}`).join('\n')}
 
 ---
 
