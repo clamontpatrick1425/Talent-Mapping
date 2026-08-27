@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { TalentMapReport, SeniorityLevel } from '../types';
 import { CompensationAnalyzer } from './CompensationAnalyzer';
+import { CompetitorHiringIntensityChart } from './CompetitorHiringIntensityChart';
 import {
   DollarSign,
   TrendingUp,
@@ -20,6 +21,7 @@ import {
   AlertTriangle,
   Zap,
   Scale,
+  Flame,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -48,7 +50,7 @@ interface MarketInsightsViewProps {
 }
 
 export const MarketInsightsView: React.FC<MarketInsightsViewProps> = ({ report }) => {
-  const [activeInsightTab, setActiveInsightTab] = useState<'analyzer' | 'all' | 'curves' | 'geo' | 'trends'>('analyzer');
+  const [activeInsightTab, setActiveInsightTab] = useState<'analyzer' | 'competitors' | 'curves' | 'geo' | 'trends' | 'all'>('analyzer');
   const [compViewMode, setCompViewMode] = useState<'total' | 'base' | 'equity'>('total');
   const [selectedIndustrySector, setSelectedIndustrySector] = useState<string>('ALL');
   const [selectedMetroFilter, setSelectedMetroFilter] = useState<string>(report.input.geography.location);
@@ -406,6 +408,22 @@ export const MarketInsightsView: React.FC<MarketInsightsViewProps> = ({ report }
         </button>
 
         <button
+          id="tab-insights-competitors"
+          onClick={() => setActiveInsightTab('competitors')}
+          className={`px-4 py-2 rounded-xl font-bold flex items-center gap-2 whitespace-nowrap transition-all cursor-pointer ${
+            activeInsightTab === 'competitors'
+              ? 'accent-gradient text-white glow'
+              : 'glass-card text-slate-400 hover:text-white hover:border-slate-700'
+          }`}
+        >
+          <Flame className="w-3.5 h-3.5 text-cyan-400" />
+          <span>Competitor Hiring Intensity</span>
+          <span className="px-1.5 py-0.2 rounded text-[9px] bg-cyan-400/20 text-cyan-300 font-normal">
+            Recharts
+          </span>
+        </button>
+
+        <button
           id="tab-insights-curves"
           onClick={() => setActiveInsightTab('curves')}
           className={`px-4 py-2 rounded-xl font-bold flex items-center gap-2 whitespace-nowrap transition-all cursor-pointer ${
@@ -461,6 +479,11 @@ export const MarketInsightsView: React.FC<MarketInsightsViewProps> = ({ report }
       {/* RENDER 1: Compensation Analyzer */}
       {(activeInsightTab === 'analyzer' || activeInsightTab === 'all') && (
         <CompensationAnalyzer report={report} />
+      )}
+
+      {/* RENDER 1B: Competitor Hiring Intensity Chart */}
+      {(activeInsightTab === 'competitors' || activeInsightTab === 'all') && (
+        <CompetitorHiringIntensityChart report={report} />
       )}
 
       {/* RENDER 2: Dynamic Compensation Benchmarking & Percentile Distribution */}

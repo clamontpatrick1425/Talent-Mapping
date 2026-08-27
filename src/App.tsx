@@ -12,6 +12,14 @@ import { ExportCenterModal } from './components/ExportCenterModal';
 import { CandidateOutreachStudio } from './components/CandidateOutreachStudio';
 import { MarketInsightsView } from './components/MarketInsightsView';
 import { CandidateTracker } from './components/CandidateTracker';
+import { AutoSaveIndicator } from './components/AutoSaveIndicator';
+import {
+  saveReportToStorage,
+  loadReportFromStorage,
+  saveNavigationStateToStorage,
+  loadNavigationStateFromStorage,
+  clearAllAutoSavedData,
+} from './services/storageService';
 import {
   Compass,
   FileText,
@@ -38,10 +46,21 @@ import {
 type ActiveTab = 'intake' | 'dashboard' | 'insights' | 'report' | 'sourcing' | 'executive';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard');
-  const [sourcingSubTab, setSourcingSubTab] = useState<'search' | 'tracker' | 'outreach'>('search');
+  // Restore saved navigation or fallback to dashboard
+  const savedNav = typeof window !== 'undefined' ? loadNavigationStateFromStorage() : null;
+  const [activeTab, setActiveTab] = useState<ActiveTab>(savedNav?.activeTab || 'dashboard');
+  const [sourcingSubTab, setSourcingSubTab] = useState<'search' | 'tracker' | 'outreach'>(
+    savedNav?.sourcingSubTab || 'search'
+  );
   const [isExportOpen, setIsExportOpen] = useState<boolean>(false);
+  const [isAutoSaving, setIsAutoSaving] = useState<boolean>(false);
+
+  // Restore saved report from localStorage or generate from default preset
   const [report, setReport] = useState<TalentMapReport | null>(() => {
+    const saved = loadReportFromStorage();
+    if (saved && saved.id) {
+      return saved;
+    }
     try {
       const defaultPreset = SAMPLE_JD_PRESETS[0];
       const parsed = parseJDHeuristically(defaultPreset.jdText, `${defaultPreset.title}.txt`);
@@ -54,6 +73,7 @@ export default function App() {
       return null;
     }
   });
+
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [isCopilotOpen, setIsCopilotOpen] = useState<boolean>(false);
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
@@ -83,8 +103,64 @@ export default function App() {
     }
   }, [theme]);
 
+  // Auto-save active report whenever it changes
+  useEffect(() => {
+    if (report) {
+      setIsAutoSaving(true);
+      saveReportToStorage(report);
+      const timer = setTimeout(() => setIsAutoSaving(false), 400);
+      return () => clearTimeout(timer);
+    }
+  }, [report]);
+
+  // Auto-save navigation tabs
+  useEffect(() => {
+    saveNavigationStateToStorage({
+      activeTab,
+      sourcingSubTab,
+      lastUpdated: new Date().toISOString(),
+    });
+  }, [activeTab, sourcingSubTab]);
+
+  // Periodic background auto-save sync (every 10 seconds)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (report) {
+        saveReportToStorage(report);
+      }
+    }, 10000);
+    return () => clearInterval(interval);
+  }, [report]);
+
   const toggleTheme = () => {
     setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
+  };
+
+  const handleManualSave = () => {
+    setIsAutoSaving(true);
+    if (report) {
+      saveReportToStorage(report);
+    }
+    saveNavigationStateToStorage({
+      activeTab,
+      sourcingSubTab,
+      lastUpdated: new Date().toISOString(),
+    });
+    setTimeout(() => setIsAutoSaving(false), 400);
+  };
+
+  const handleResetWorkspace = () => {
+    clearAllAutoSavedData();
+    const defaultPreset = SAMPLE_JD_PRESETS[0];
+    const parsed = parseJDHeuristically(defaultPreset.jdText, `${defaultPreset.title}.txt`);
+    const fallbackReport = generateSynthesizedTalentMap(parsed, {
+      method: 'preset',
+      presetId: defaultPreset.id,
+      fileName: `${defaultPreset.title}.txt`,
+    });
+    setReport(fallbackReport);
+    setActiveTab('dashboard');
+    setSourcingSubTab('search');
   };
 
   // Handle report generation from IntakeView
@@ -99,6 +175,7 @@ export default function App() {
       const data = await response.json();
       if (data.success && data.report) {
         setReport(data.report);
+        saveReportToStorage(data.report);
         setActiveTab('dashboard');
         return;
       }
@@ -111,6 +188,7 @@ export default function App() {
     // Local synthesis fallback ensures zero downtime
     const fallbackReport = generateSynthesizedTalentMap(input, source);
     setReport(fallbackReport);
+    saveReportToStorage(fallbackReport);
     setActiveTab('dashboard');
   };
 
@@ -224,6 +302,13 @@ export default function App() {
 
           {/* Right Action Tools */}
           <div className="flex items-center gap-2.5">
+            {/* LocalStorage AutoSave Engine Indicator */}
+            <AutoSaveIndicator
+              onManualSave={handleManualSave}
+              onResetWorkspace={handleResetWorkspace}
+              isSaving={isAutoSaving}
+            />
+
             {/* Global Dark / Light Mode Toggle */}
             <button
               id="btn-toggle-theme"

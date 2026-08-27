@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { TalentMapInput, JDSourceInfo, ConfidenceLevel, SeniorityLevel, WorkModel, UrgencyLevel } from '../types';
 import { parseJDHeuristically } from '../services/talentIntelligenceEngine';
 import { extractTextFromFile } from '../services/documentParser';
+import { saveIntakeDraftToStorage, loadIntakeDraftFromStorage } from '../services/storageService';
 import { ConfidenceBadge } from './ConfidenceBadge';
 import {
   Upload,
@@ -28,17 +29,20 @@ interface IntakeViewProps {
 }
 
 export const IntakeView: React.FC<IntakeViewProps> = ({ onGenerateReport, isGenerating }) => {
+  // Load any previously saved draft from localStorage
+  const savedDraft = typeof window !== 'undefined' ? loadIntakeDraftFromStorage() : null;
+
   // Step 1: Upload, Step 2: Extraction Review
-  const [currentStep, setCurrentStep] = useState<1 | 2>(1);
-  const [rawText, setRawText] = useState<string>('');
-  const [fileName, setFileName] = useState<string | null>(null);
+  const [currentStep, setCurrentStep] = useState<1 | 2>(savedDraft?.currentStep || 1);
+  const [rawText, setRawText] = useState<string>(savedDraft?.rawText || '');
+  const [fileName, setFileName] = useState<string | null>(savedDraft?.fileName || null);
   const [isParsing, setIsParsing] = useState<boolean>(false);
   const [isExtractingFile, setIsExtractingFile] = useState<boolean>(false);
   const [isDragging, setIsDragging] = useState<boolean>(false);
-  const [fileExtractStatus, setFileExtractStatus] = useState<string | null>(null);
+  const [fileExtractStatus, setFileExtractStatus] = useState<string | null>(savedDraft?.fileExtractStatus || null);
 
   // Extracted data state for Step 2
-  const [formData, setFormData] = useState<TalentMapInput>({
+  const [formData, setFormData] = useState<TalentMapInput>(savedDraft?.formData || {
     role: { value: '', confidence: 'unknown' },
     geography: { location: '', radiusMiles: 35, confidence: 'unknown' },
     seniority: { value: 'SENIOR', confidence: 'unknown' },
@@ -58,6 +62,20 @@ export const IntakeView: React.FC<IntakeViewProps> = ({ onGenerateReport, isGene
     hiringUrgency: { value: 'HIGH', confidence: 'unknown' },
     hiringVolume: { value: 1, confidence: 'unknown' },
   });
+
+  // Auto-save intake draft whenever data changes
+  useEffect(() => {
+    if (rawText.trim() || fileName || formData.role.value) {
+      saveIntakeDraftToStorage({
+        rawText,
+        fileName,
+        formData,
+        currentStep,
+        fileExtractStatus,
+        lastUpdated: new Date().toISOString(),
+      });
+    }
+  }, [rawText, fileName, formData, currentStep, fileExtractStatus]);
 
   // Tag inputs state
   const [reqSkillInput, setReqSkillInput] = useState('');

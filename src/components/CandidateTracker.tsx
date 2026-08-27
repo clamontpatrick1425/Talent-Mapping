@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { TalentMapReport, TrackedCandidate, CandidatePipelineStage } from '../types';
+import { saveCandidatesToStorage, loadCandidatesFromStorage } from '../services/storageService';
 import {
   Users,
   UserPlus,
@@ -48,13 +49,9 @@ export const CandidateTracker: React.FC<CandidateTrackerProps> = ({ report, onNa
 
   // Initialize with seed candidates tailored to the report
   const [candidates, setCandidates] = useState<TrackedCandidate[]>(() => {
-    const saved = localStorage.getItem(`talentiq_candidates_${report.id}`);
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        // fallback
-      }
+    const saved = loadCandidatesFromStorage(report.id);
+    if (saved && saved.length > 0) {
+      return saved;
     }
 
     // Default pre-seeded high-caliber candidates matching target companies
@@ -134,7 +131,7 @@ export const CandidateTracker: React.FC<CandidateTrackerProps> = ({ report, onNa
 
   // Local storage persistence
   useEffect(() => {
-    localStorage.setItem(`talentiq_candidates_${report.id}`, JSON.stringify(candidates));
+    saveCandidatesToStorage(report.id, candidates);
   }, [candidates, report.id]);
 
   const [searchQuery, setSearchQuery] = useState('');
